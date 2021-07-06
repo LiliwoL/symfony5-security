@@ -1,16 +1,46 @@
 security:
     # https://symfony.com/doc/current/security/experimental_authenticators.html
     enable_authenticator_manager: true
+    password_hashers:
+        App\Entity\User:
+            algorithm: auto
+
     # https://symfony.com/doc/current/security.html#where-do-users-come-from-user-providers
     providers:
-        users_in_memory: { memory: null }
+        # used to reload user from session & other features (e.g. switch_user)
+        app_user_provider:
+            entity:
+                class: App\Entity\User
+                property: email
+
+    # Cette sectionindique COMMENT les utilisateurs peuvent s'autentifier
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
         main:
+            # Lazy permet d'indiquer de ne pas lancer de session si on n'a pas besoin d'autentification
             lazy: true
-            provider: users_in_memory
+            provider: app_user_provider
+
+            # Authentification possible avec un formulaire de login ou HTTP basic
+            
+            # Par défaut la route de login est /login
+            #form_login: ~ 
+
+            # En cas de route spécifique
+            form_login:
+                login_path: app_login
+                check_path: app_login
+            http_basic: ~
+
+            # configure the form authentication as the entry point for unauthenticated users
+            entry_point: form_login
+            custom_authenticator: App\Security\LoginFormAuthenticator
+            logout:
+                path: app_logout
+                # where to redirect after logout
+                # target: app_any_route
 
             # activate different ways to authenticate
             # https://symfony.com/doc/current/security.html#firewalls-authentication
@@ -21,5 +51,8 @@ security:
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
+        - { path: ^/admin, roles: ROLE_ADMIN }
+        - { path: ^/user, roles: ROLE_USER }
+        - { path: ^/public, roles: PUBLIC_ACCESS }
+        
         # - { path: ^/profile, roles: ROLE_USER }
